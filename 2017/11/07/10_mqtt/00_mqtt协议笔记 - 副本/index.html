@@ -1,0 +1,684 @@
+
+ <!DOCTYPE HTML>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  
+    <title>mqtt协议解读1 | zhaod博客</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, minimum-scale=1">
+    
+    <meta name="author" content="赵迪">
+    
+    <meta name="description" content="1 MQTT介绍2 MQTT控制报文的格式MQTT协议通过交换预定义的MQTT控制报文来通信
+MQTT控制报文有是三个部分组成
+
+==固定报头== fixed header、所有的报文都有
+==可变报头== variable header、部分报文包含
+==有效载荷== payload 、部分报文包">
+    
+    
+    
+    
+    
+    <link rel="icon" href="/img/favicon.ico">
+    
+    
+    <link rel="apple-touch-icon" href="/img/pacman.jpg">
+    <link rel="apple-touch-icon-precomposed" href="/img/pacman.jpg">
+    
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+  <body>
+    <header>
+      <div>
+		
+			<div id="imglogo">
+				<a href="/"><img src="/img/logo.svg" alt="zhaod博客" title="zhaod博客"/></a>
+			</div>
+			
+			<div id="textlogo">
+				<h1 class="site-name"><a href="/" title="zhaod博客">zhaod博客</a></h1>
+				<h2 class="blog-motto">记录日常学习</h2>
+			</div>
+			<div class="navbar"><a class="navbutton navmobile" href="#" title="菜单">
+			</a></div>
+			<nav class="animated">
+				<ul>
+					
+						<li><a href="/">主页</a></li>
+					
+						<li><a href="/archives">Archives</a></li>
+					
+					<li>
+					
+					<form class="search" action="//google.com/search" method="get" accept-charset="utf-8">
+						<label>Search</label>
+						<input type="text" id="search" name="q" autocomplete="off" maxlength="20" placeholder="搜索" />
+						<input type="hidden" name="q" value="site:yoursite.com">
+					</form>
+					
+					</li>
+				</ul>
+			</nav>			
+</div>
+
+    </header>
+    <div id="container">
+      <div id="main" class="post" itemscope itemprop="blogPost">
+	<article itemprop="articleBody"> 
+		<header class="article-info clearfix">
+  <h1 itemprop="name">
+    
+      <a href="/2017/11/07/10_mqtt/00_mqtt协议笔记 - 副本/" title="mqtt协议解读1" itemprop="url">mqtt协议解读1</a>
+  </h1>
+  <p class="article-author">By
+    
+      <a href="http://yoursite.com" title="赵迪">赵迪</a>
+    </p>
+  <p class="article-time">
+    <time datetime="2017-11-07T07:45:23.000Z" itemprop="datePublished">2017-11-07</time>
+    更新日期:<time datetime="2018-01-12T00:49:55.387Z" itemprop="dateModified">2018-01-12</time>
+    
+  </p>
+</header>
+	<div class="article-content">
+		
+		
+		<div id="toc" class="toc-article">
+			<strong class="toc-title">文章目录</strong>
+		<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-MQTT介绍"><span class="toc-number">1.</span> <span class="toc-text">1 MQTT介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-MQTT控制报文的格式"><span class="toc-number">2.</span> <span class="toc-text">2 MQTT控制报文的格式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-固定报头-fixed-header"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 固定报头 fixed header</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-1-类型"><span class="toc-number">2.1.1.</span> <span class="toc-text">2.1.1 类型</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-2-标志"><span class="toc-number">2.1.2.</span> <span class="toc-text">2.1.2 标志</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-可变报头"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-1-报文标识符-packet-idenfifier"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 报文标识符 packet idenfifier</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-有效载荷-payload"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 有效载荷 payload</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-MQTT控制报文"><span class="toc-number">3.</span> <span class="toc-text">3 MQTT控制报文</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-CONNECT-连接服务端"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 CONNECT 连接服务端</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-1-固定报头"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-2-可变报头"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#清理会话-Clean-Session"><span class="toc-number">3.1.2.1.</span> <span class="toc-text">清理会话 Clean Session</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#遗嘱标志-Will-Flag"><span class="toc-number">3.1.2.2.</span> <span class="toc-text">遗嘱标志 Will Flag</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#遗嘱服务质量等级-Will-Qos"><span class="toc-number">3.1.2.3.</span> <span class="toc-text">遗嘱服务质量等级 Will Qos</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#遗嘱保留-Will-Reatain"><span class="toc-number">3.1.2.4.</span> <span class="toc-text">遗嘱保留 Will Reatain</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#用户名，密码"><span class="toc-number">3.1.2.5.</span> <span class="toc-text">用户名，密码</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-3-有效载荷Payload"><span class="toc-number">3.1.3.</span> <span class="toc-text">3.1.3 有效载荷Payload</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#客户端标识符-Client-ID"><span class="toc-number">3.1.3.1.</span> <span class="toc-text">客户端标识符 Client ID</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#遗嘱主题-Will-Topic"><span class="toc-number">3.1.3.2.</span> <span class="toc-text">遗嘱主题 Will Topic</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#遗嘱消息-Will-Message"><span class="toc-number">3.1.3.3.</span> <span class="toc-text">遗嘱消息 Will Message</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#用户名-UserName"><span class="toc-number">3.1.3.4.</span> <span class="toc-text">用户名 UserName</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#密码-Password"><span class="toc-number">3.1.3.5.</span> <span class="toc-text">密码 Password</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-4-连接过程"><span class="toc-number">3.1.4.</span> <span class="toc-text">3.1.4 连接过程</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-CONNACK-确认连接请求"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 CONNACK 确认连接请求</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-1-固定报头"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-2-可变报头"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#当前会话-Session-Present"><span class="toc-number">3.2.2.1.</span> <span class="toc-text">当前会话 Session Present</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-3-有效载体"><span class="toc-number">3.2.3.</span> <span class="toc-text">3.2.3 有效载体</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-4-错误码（MQTT协议3-1-1）"><span class="toc-number">3.2.4.</span> <span class="toc-text">3.2.4 错误码（MQTT协议3.1.1）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-发布消息-PUBLISH"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 发布消息 PUBLISH</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-1-固定报头"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1 固定报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#重发标志DUP"><span class="toc-number">3.3.1.1.</span> <span class="toc-text">重发标志DUP</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#服务质量等级qos"><span class="toc-number">3.3.1.2.</span> <span class="toc-text">服务质量等级qos</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#保留标志-retain"><span class="toc-number">3.3.1.3.</span> <span class="toc-text">保留标志 retain</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-2-可变报头"><span class="toc-number">3.3.2.</span> <span class="toc-text">3.3.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#主题名-topic-name"><span class="toc-number">3.3.2.1.</span> <span class="toc-text">主题名 topic name</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符"><span class="toc-number">3.3.2.2.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-3-有效载体"><span class="toc-number">3.3.3.</span> <span class="toc-text">3.3.3 有效载体</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-4-响应"><span class="toc-number">3.3.4.</span> <span class="toc-text">3.3.4 响应</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4-PUBACK-发布确认"><span class="toc-number">3.3.5.</span> <span class="toc-text">3.4 PUBACK 发布确认</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4-1-固定报头"><span class="toc-number">3.3.6.</span> <span class="toc-text">3.4.1  固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4-2-可变报头"><span class="toc-number">3.3.7.</span> <span class="toc-text">3.4.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-1"><span class="toc-number">3.3.7.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4-3-有效载荷"><span class="toc-number">3.3.8.</span> <span class="toc-text">3.4.3 有效载荷</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-PUBREC-发布收到-qos-2，第一步"><span class="toc-number">3.4.</span> <span class="toc-text">3.5 PUBREC 发布收到 qos = 2，第一步</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-5-1-固定报头"><span class="toc-number">3.4.1.</span> <span class="toc-text">3.5.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-5-2-可变报头"><span class="toc-number">3.4.2.</span> <span class="toc-text">3.5.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-2"><span class="toc-number">3.4.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-5-3-有效载体"><span class="toc-number">3.4.3.</span> <span class="toc-text">3.5.3 有效载体</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-6-PUBREL-发布释放-qos-2，第二步"><span class="toc-number">3.5.</span> <span class="toc-text">3.6 PUBREL 发布释放 qos = 2，第二步</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-6-1-固定报头"><span class="toc-number">3.5.1.</span> <span class="toc-text">3.6.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-6-2-可变报头"><span class="toc-number">3.5.2.</span> <span class="toc-text">3.6.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-3"><span class="toc-number">3.5.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-6-3-有效载荷"><span class="toc-number">3.5.3.</span> <span class="toc-text">3.6.3 有效载荷</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-7-PUBCOMP-发布完成-qos-2，第三步"><span class="toc-number">3.6.</span> <span class="toc-text">3.7 PUBCOMP 发布完成 qos = 2，第三步</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-7-1-固定报头"><span class="toc-number">3.6.1.</span> <span class="toc-text">3.7.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-7-2-可变报头"><span class="toc-number">3.6.2.</span> <span class="toc-text">3.7.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-4"><span class="toc-number">3.6.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-7-3-有效载荷"><span class="toc-number">3.6.3.</span> <span class="toc-text">3.7.3 有效载荷</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-8-SUBSCRIBE-订阅主题"><span class="toc-number">3.7.</span> <span class="toc-text">3.8 SUBSCRIBE 订阅主题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-8-1-固定报头"><span class="toc-number">3.7.1.</span> <span class="toc-text">3.8.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-8-2-可变报头"><span class="toc-number">3.7.2.</span> <span class="toc-text">3.8.2 可变报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-8-3-有效载体"><span class="toc-number">3.7.3.</span> <span class="toc-text">3.8.3 有效载体</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-8-4-响应"><span class="toc-number">3.7.4.</span> <span class="toc-text">3.8.4 响应</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-9-SUBACK-订阅确认"><span class="toc-number">3.8.</span> <span class="toc-text">3.9 SUBACK 订阅确认</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-9-1-固定报头"><span class="toc-number">3.8.1.</span> <span class="toc-text">3.9.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-9-2-可变报头"><span class="toc-number">3.8.2.</span> <span class="toc-text">3.9.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-5"><span class="toc-number">3.8.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-9-3-有效载荷"><span class="toc-number">3.8.3.</span> <span class="toc-text">3.9.3 有效载荷</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-10-取消订阅"><span class="toc-number">3.9.</span> <span class="toc-text">3.10 取消订阅</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-10-1-固定报头"><span class="toc-number">3.9.1.</span> <span class="toc-text">3.10.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-10-2-可变报头"><span class="toc-number">3.9.2.</span> <span class="toc-text">3.10.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-6"><span class="toc-number">3.9.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-10-3-有效载荷"><span class="toc-number">3.9.3.</span> <span class="toc-text">3.10.3 有效载荷</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-10-4-响应"><span class="toc-number">3.9.4.</span> <span class="toc-text">3.10.4 响应</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-11-UNSUBACK-取消订阅确认"><span class="toc-number">3.10.</span> <span class="toc-text">3.11 UNSUBACK 取消订阅确认</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-11-1-固定报头"><span class="toc-number">3.10.1.</span> <span class="toc-text">3.11.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-11-2-可变报头"><span class="toc-number">3.10.2.</span> <span class="toc-text">3.11.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-7"><span class="toc-number">3.10.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-11-3-有效载荷"><span class="toc-number">3.10.3.</span> <span class="toc-text">3.11.3 有效载荷</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-12-PINGREQ-心跳请求"><span class="toc-number">3.11.</span> <span class="toc-text">3.12 PINGREQ 心跳请求</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-13-PINGRESP"><span class="toc-number">3.12.</span> <span class="toc-text">3.13 PINGRESP</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-14-DISCONNECT-断开连接"><span class="toc-number">3.13.</span> <span class="toc-text">3.14 DISCONNECT 断开连接</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-14-1-固定报头"><span class="toc-number">3.13.1.</span> <span class="toc-text">3.14.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-14-2-可变报头"><span class="toc-number">3.13.2.</span> <span class="toc-text">3.14.2 可变报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-14-3-有效载荷"><span class="toc-number">3.13.3.</span> <span class="toc-text">3.14.3 有效载荷</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-14-4-响应"><span class="toc-number">3.13.4.</span> <span class="toc-text">3.14.4 响应</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-操作行为"><span class="toc-number">4.</span> <span class="toc-text">4 操作行为</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-状态存储"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 状态存储</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-网络连接"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 网络连接</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-7-主题名和主题过滤器"><span class="toc-number">4.3.</span> <span class="toc-text">4.7 主题名和主题过滤器</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-7-1-主题通配符"><span class="toc-number">4.3.1.</span> <span class="toc-text">4.7.1 主题通配符</span></a></li></ol></li></ol></li></ol>
+		</div>
+		
+		<h2 id="1-MQTT介绍"><a href="#1-MQTT介绍" class="headerlink" title="1 MQTT介绍"></a>1 MQTT介绍</h2><h2 id="2-MQTT控制报文的格式"><a href="#2-MQTT控制报文的格式" class="headerlink" title="2 MQTT控制报文的格式"></a>2 MQTT控制报文的格式</h2><p>MQTT协议通过交换预定义的MQTT控制报文来通信</p>
+<p>MQTT控制报文有是三个部分组成</p>
+<ul>
+<li>==固定报头== fixed header、所有的报文都有</li>
+<li>==可变报头== variable header、部分报文包含</li>
+<li>==有效载荷== payload 、部分报文包含</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>组成</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fixed header</td>
+<td>固定报头，所有控制报文都包含</td>
+</tr>
+<tr>
+<td>Variable header</td>
+<td>可变报头，部分控制报文包含</td>
+</tr>
+<tr>
+<td>Payload</td>
+<td>有效载荷，部分控制报文包含</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-1-固定报头-fixed-header"><a href="#2-1-固定报头-fixed-header" class="headerlink" title="2.1 固定报头 fixed header"></a>2.1 固定报头 fixed header</h3><p>每个mqtt控制报文都包含一个固定报头</p>
+<table>
+<thead>
+<tr>
+<th>7</th>
+<th>6</th>
+<th>5</th>
+<th>4</th>
+<th>3</th>
+<th>2</th>
+<th>1</th>
+<th>0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>7-4 MQTT控制报文类型 16-2</p>
+<p>3-0 用于指定控制报文类型的标志位</p>
+<h4 id="2-1-1-类型"><a href="#2-1-1-类型" class="headerlink" title="2.1.1 类型"></a>2.1.1 类型</h4><p>下面列举14中出现的报文类型</p>
+<table>
+<thead>
+<tr>
+<th>名字</th>
+<th>方向</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CONNECT</td>
+<td>C -&gt; S</td>
+<td>客户端请求连接服务端</td>
+</tr>
+<tr>
+<td>CONNACK</td>
+<td>S -&gt; C</td>
+<td>对客户端连接的报文进行确认</td>
+</tr>
+<tr>
+<td>PUBLISH</td>
+<td>all</td>
+<td>发布消息</td>
+</tr>
+<tr>
+<td>PUBACK</td>
+<td>all</td>
+<td>qos = 1 消息的确认</td>
+</tr>
+<tr>
+<td>PUBREC</td>
+<td>all</td>
+<td>发布收到，保证交互的第一步</td>
+</tr>
+<tr>
+<td>PUBREL</td>
+<td>all</td>
+<td>发布释放，保证交互的第二步</td>
+</tr>
+<tr>
+<td>PUBCOMP</td>
+<td>all</td>
+<td>qos = 2发布完成，保证交互第三步</td>
+</tr>
+<tr>
+<td>SUBSCRIBE</td>
+<td>C -&gt; S</td>
+<td>客户端订阅请求 </td>
+</tr>
+<tr>
+<td>SUBACK</td>
+<td>S -&gt; C</td>
+<td>订阅请求报文确认</td>
+</tr>
+<tr>
+<td>UNSUBSCRIBE</td>
+<td>C -&gt; S</td>
+<td>取消订阅请求</td>
+</tr>
+<tr>
+<td>UNSUBACK</td>
+<td>S -&gt; C</td>
+<td>取消订阅请求确认</td>
+</tr>
+<tr>
+<td>PINGREQ</td>
+<td>C -&gt; S</td>
+<td>心跳请求</td>
+</tr>
+<tr>
+<td>PINGRESP</td>
+<td>S -&gt; C</td>
+<td>心跳回应</td>
+</tr>
+<tr>
+<td>DISCONNECT</td>
+<td>C -&gt; S</td>
+<td>客户端断开连接</td>
+</tr>
+</tbody>
+</table>
+<h4 id="2-1-2-标志"><a href="#2-1-2-标志" class="headerlink" title="2.1.2 标志"></a>2.1.2 标志</h4><p>固定报头的第1个字节的后四位0-3，包含每个控制报文类型特定的标志，也就是说每个控制报文都是不同的<br>报文 |3 | 2 | 1 | 0<br>—|—|—|—|—<br>publish | dup | qos | qos | retain </p>
+<ul>
+<li>dup 控制报文的重复分发标志</li>
+<li>qos publish报文的服务质量邓婕</li>
+<li>retain publish报文的保留标志</li>
+</ul>
+<h3 id="2-2-可变报头"><a href="#2-2-可变报头" class="headerlink" title="2.2 可变报头"></a>2.2 可变报头</h3><p>某些MQTT控制报文包含一个可变报头部分，在固定报头和负载之间，可变报头的内容根据报文类型的不同而不同</p>
+<h4 id="2-2-1-报文标识符-packet-idenfifier"><a href="#2-2-1-报文标识符-packet-idenfifier" class="headerlink" title="2.2.1 报文标识符 packet idenfifier"></a>2.2.1 报文标识符 packet idenfifier</h4><p>报文标识符就是报文的唯一身份标识，报文ID，两个字节表示</p>
+<p>含有报文标识符的报文有：PUBLISH（qos&gt;0），PUBACK，PUBREC，PUBREL，PUBCOMP，SUBSCRIBE，SUBACK，UNSUBSCIBE，UNSUBACK</p>
+<h3 id="2-3-有效载荷-payload"><a href="#2-3-有效载荷-payload" class="headerlink" title="2.3 有效载荷 payload"></a>2.3 有效载荷 payload</h3><p>某些报文在报文的最后部分包含一个有效载荷，对于publish报文来书，有效载荷就是应用消息</p>
+<p>包含有效载荷的报文有：CONNECT，publish（可选），SUBSCRIBE，SUBACK，UNSUBSCRIBE</p>
+<h2 id="3-MQTT控制报文"><a href="#3-MQTT控制报文" class="headerlink" title="3 MQTT控制报文"></a>3 MQTT控制报文</h2><h3 id="3-1-CONNECT-连接服务端"><a href="#3-1-CONNECT-连接服务端" class="headerlink" title="3.1 CONNECT 连接服务端"></a>3.1 CONNECT 连接服务端</h3><p>客户端和服务端的网络连接建立后，客户端发送给服务端的第一个报文必须是connect报文<br>在一个网络连接上，客户端只能发送一次connect报文，服务端必须将发送的第二个connect报文当做协议违规处理，并且断开客户端的连接</p>
+<h4 id="3-1-1-固定报头"><a href="#3-1-1-固定报头" class="headerlink" title="3.1.1 固定报头"></a>3.1.1 固定报头</h4><h4 id="3-1-2-可变报头"><a href="#3-1-2-可变报头" class="headerlink" title="3.1.2 可变报头"></a>3.1.2 可变报头</h4><p>可变报头按照下面的次序包含四个字段：协议名（protocol name），协议级别（protocol level），连接标志（connect flags），保持连接（keep alive）</p>
+<ul>
+<li>协议名：</li>
+<li>协议级别</li>
+<li><p>连接标志</p>
+<p>7 | 6 | 5| 4 | 3 | 2 | 1 | 0<br>—|—|—|—|—|—|—|—<br>userName flag | password | will retain | will qos | will qos | will flag |  clean session|reserved</p>
+</li>
+</ul>
+<p>服务为端必须校验connect控制报文的保留标志位第0位是否为0，否则断开连接处理</p>
+<h5 id="清理会话-Clean-Session"><a href="#清理会话-Clean-Session" class="headerlink" title="清理会话 Clean Session"></a>清理会话 Clean Session</h5><p>客户端和服务器可以保存会话状态，一支持跨网络连接的可靠消息传输，这个标志位用于控制会话状态的生存时间<br>如果清理会话的标志被设置为0：服务端必须基于当前会话状态（客户端的标识符）恢复与客户端的通信，如果没有雨这个客户端标识符关联的会话，服务端必须创建一个新的会话。在连接断开之后，客户端和服务端必须保存会话信息。</p>
+<p>当清理会话标志位0的会话连接断开之后，服务端必须将之后的qos1和qos2级别的消息保存为会话状态的一部分，如果这些消息匹配断开连接是客户单的任何订阅，服务端也可以保存满足相同条件的qos0级别的消息。</p>
+<p>如果清理会话（clean session）标志被设置为1，客户端和服务端必须丢弃之前的任何会话并且开始一个新的会话。会话仅持续和网络连接相同长的时间，与这个会话关联的状态数据不能被任何之后的会话重用。</p>
+<p>客户端的会话状态：<br>服务端的会话状态：</p>
+<p>记住了！！！保留消息不是会话状态的一部分，会话终止时不能删除保留消息。</p>
+<h5 id="遗嘱标志-Will-Flag"><a href="#遗嘱标志-Will-Flag" class="headerlink" title="遗嘱标志 Will Flag"></a>遗嘱标志 Will Flag</h5><p>遗嘱标志Will Flag 被设置为1，表示如果连接请求被接受了，遗嘱消息必须被存储在服务端并且和这个网络连接关联。之后网络连接关闭时，服务端必须发布这个遗嘱消息，除非服务端收到DISCONNECT报文删除了这个遗嘱消息。</p>
+<p>遗嘱消息发布的条件，不局限这几种情况的发生：</p>
+<ul>
+<li>服务端监测到一个I/O错误或者是网络故障</li>
+<li>客户端在保持联系的时间里面没有通信</li>
+<li>没有断没有先发送disconnect报文直接关闭通讯</li>
+<li>由于协议错误服务端关闭了网络连接</li>
+</ul>
+<p>如果遗嘱标志被设置为1，连接标志中的  will retain，will qos 会被服务端用到，同时有效载荷中必须必须包含will topic 和will message，</p>
+<p>一旦发布或服务端接受到了客户端发送的disconnect报文，遗嘱消息就必须从存储的会话状态中移除</p>
+<p>如果遗嘱标志被设置为0，连接标志中的will qos，will retain必须被设置为0，并且有效载荷中不能包含 will topic 和 will message</p>
+<h5 id="遗嘱服务质量等级-Will-Qos"><a href="#遗嘱服务质量等级-Will-Qos" class="headerlink" title="遗嘱服务质量等级 Will Qos"></a>遗嘱服务质量等级 Will Qos</h5><p>用于指明遗嘱发布时候的服务质量等级</p>
+<h5 id="遗嘱保留-Will-Reatain"><a href="#遗嘱保留-Will-Reatain" class="headerlink" title="遗嘱保留 Will Reatain"></a>遗嘱保留 Will Reatain</h5><p>如果遗嘱发布的时候需要被保留，则需要指定这一位的值</p>
+<ul>
+<li>如果遗嘱保留被设置为0，服务端必须将遗嘱消息当做非保留消息发布</li>
+<li>如果遗嘱保留消息被设置为1，服务端必须将遗嘱消息当做保留消息发布</li>
+</ul>
+<h5 id="用户名，密码"><a href="#用户名，密码" class="headerlink" title="用户名，密码"></a>用户名，密码</h5><p>存在于有效载荷中</p>
+<ul>
+<li>保持会话 KeepAlive</li>
+</ul>
+<h4 id="3-1-3-有效载荷Payload"><a href="#3-1-3-有效载荷Payload" class="headerlink" title="3.1.3 有效载荷Payload"></a>3.1.3 有效载荷Payload</h4><p>connect报文的有效载荷取决于可变报头中的标志是否办函这些独断，如果包含的话，必须按照这个顺序出现：客户端标识符，遗嘱主题，遗嘱消息，用户名，密码</p>
+<h5 id="客户端标识符-Client-ID"><a href="#客户端标识符-Client-ID" class="headerlink" title="客户端标识符 Client ID"></a>客户端标识符 Client ID</h5><p>客户端标识符只可以采用数字字母（大小写）</p>
+<h5 id="遗嘱主题-Will-Topic"><a href="#遗嘱主题-Will-Topic" class="headerlink" title="遗嘱主题 Will Topic"></a>遗嘱主题 Will Topic</h5><h5 id="遗嘱消息-Will-Message"><a href="#遗嘱消息-Will-Message" class="headerlink" title="遗嘱消息 Will Message"></a>遗嘱消息 Will Message</h5><p>遗嘱消息定义了将被发布到遗嘱主题的应用消息</p>
+<h5 id="用户名-UserName"><a href="#用户名-UserName" class="headerlink" title="用户名 UserName"></a>用户名 UserName</h5><h5 id="密码-Password"><a href="#密码-Password" class="headerlink" title="密码 Password"></a>密码 Password</h5><h4 id="3-1-4-连接过程"><a href="#3-1-4-连接过程" class="headerlink" title="3.1.4 连接过程"></a>3.1.4 连接过程</h4><ol>
+<li>网络连接建立后，如果服务器在合理的时间内没有收到connect报文</li>
+<li>如果报文不符合规范，服务端不发送connack报文直接关闭网络连接</li>
+<li>服务端可以检查connect报文的内容是不是满足任何一部的限制，如果任何一项没有通过，应该发送一个适当的返回码非0的connack响应，并且关闭这个网络连接</li>
+<li>如果验证通过，如果ClientId表名客户端已经连接到这个服务端，那么服务端必须断开原有的客户端连接</li>
+<li>执行清理会话的过程</li>
+<li>服务端必须发送返回码为0的connack的报文作为connect报文的确认响应</li>
+<li>开始消息分发和保持连接状态监视</li>
+<li>允许客户端在发送connect报文之后立即发送其它的控制报文，客户端不需要等待服务端的connack报文，如果服务端拒绝了connect，它不能处理客户单端在connect报文之后发送的任何数据</li>
+</ol>
+<h3 id="3-2-CONNACK-确认连接请求"><a href="#3-2-CONNACK-确认连接请求" class="headerlink" title="3.2 CONNACK 确认连接请求"></a>3.2 CONNACK 确认连接请求</h3><p>服务端发送CONNACK报文响应从客户端收到的CONNECT报文。服务端发送给客户端的第一个报文必须是CONNACK</p>
+<p>如果客户端在合理的时间内没有收到服务端的CONNACK报文，客户端应该关闭网络连接</p>
+<h4 id="3-2-1-固定报头"><a href="#3-2-1-固定报头" class="headerlink" title="3.2.1 固定报头"></a>3.2.1 固定报头</h4><h4 id="3-2-2-可变报头"><a href="#3-2-2-可变报头" class="headerlink" title="3.2.2 可变报头"></a>3.2.2 可变报头</h4><h5 id="当前会话-Session-Present"><a href="#当前会话-Session-Present" class="headerlink" title="当前会话 Session Present"></a>当前会话 Session Present</h5><h4 id="3-2-3-有效载体"><a href="#3-2-3-有效载体" class="headerlink" title="3.2.3 有效载体"></a>3.2.3 有效载体</h4><p>没有有效载体</p>
+<h4 id="3-2-4-错误码（MQTT协议3-1-1）"><a href="#3-2-4-错误码（MQTT协议3-1-1）" class="headerlink" title="3.2.4 错误码（MQTT协议3.1.1）"></a>3.2.4 错误码（MQTT协议3.1.1）</h4><p>该错误码不是本人指定，是协议规范中描述的！！<br>|值|错误码|描述|<br>-|<br>0|0x00连接已接收|连接已经被服务端接受<br>1|0x01连接已拒绝，不支持的协议版本|服务端不支持客户端请求的MQTT协议级别<br>2|0x02连连接已经被拒绝，不合格的客户端标识符|客户端是正确的utf-8编码，但是服务端不允许使用<br>3|0x03连接已拒绝，服务端不可用|网络连接已经建立，但是MQTT服务不可用<br>4|0x04连接已拒绝，无效的用户名或者密码|用户名或者密码错误<br>5|0x05连接已经拒绝，未授权|客户端没有被授权连接到此服务器</p>
+<h3 id="3-3-发布消息-PUBLISH"><a href="#3-3-发布消息-PUBLISH" class="headerlink" title="3.3 发布消息 PUBLISH"></a>3.3 发布消息 PUBLISH</h3><p>所谓的publish报文就是指从客户端向服务器或者是服务器向客户端传输一个应用消息</p>
+<h4 id="3-3-1-固定报头"><a href="#3-3-1-固定报头" class="headerlink" title="3.3.1 固定报头"></a>3.3.1 固定报头</h4><table>
+<thead>
+<tr>
+<th></th>
+<th>7</th>
+<th>6</th>
+<th>5</th>
+<th>4</th>
+<th>3</th>
+<th>2</th>
+<th>1</th>
+<th>0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>dup</td>
+<td>qos</td>
+<td>qos</td>
+<td>retain</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h5 id="重发标志DUP"><a href="#重发标志DUP" class="headerlink" title="重发标志DUP"></a>重发标志DUP</h5><p>DUP = 0 : 表示这是客户端或者服务端第一次请求发送这个PUBLISH报文。<br>DUP = 1 ： 表示这可能是一个早前报文请求的重发。</p>
+<p>服务端或者是客户端请求重发一个publish报文的时候，dup必须被设置为1<br>对于qos = 0的消息，dup标志必须设置为0</p>
+<p>dup不具备传递性，也就是说服务端发送publish报文给订阅者时候，收到的publish报文的dup标志不会被传播</p>
+<h5 id="服务质量等级qos"><a href="#服务质量等级qos" class="headerlink" title="服务质量等级qos"></a>服务质量等级qos</h5><table>
+<thead>
+<tr>
+<th></th>
+<th>qos 值</th>
+<th>bit2</th>
+<th>bit1</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>最多分发一次</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>至少分发一次</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+<td>只分发一次</td>
+</tr>
+</tbody>
+</table>
+<h5 id="保留标志-retain"><a href="#保留标志-retain" class="headerlink" title="保留标志 retain"></a>保留标志 retain</h5><p>retain = 1：<br>服务端必须存储这个用用消息和他的服务质量等级，以便它可以被分给未来的主题名匹配的订阅者。</p>
+<p>一个新的订阅建立时，对每个匹配的主题名，如果存在最近保留的消息，它必须被发送给这个订阅者。</p>
+<p>如果服务端收到一条保留标志位为1的qos = 0的消息，他必须丢弃之前为那个主题保留的任何消息，它应该将这个新的qos= 0 的消息当做那个主题的新保留消息，但是任何时候都可以选择丢弃它</p>
+<p>如果retain = 1 ，且有效载荷为0字节的publish报文被服务器当做正常消息处理，它会被发送给订阅主题匹配的客户端，此外同一个主题下现存的保留消息必须被移除，因此这个主题之后的任何订阅者都不会接受到一个保留消息</p>
+<p>服务端不能存储一个0字节的保留消息</p>
+<p>如果客户端发给服务端的publish报文的retain = 0，服务端不能存储这个消息也不能移除或者替换任何现存的保留消息</p>
+<h4 id="3-3-2-可变报头"><a href="#3-3-2-可变报头" class="headerlink" title="3.3.2 可变报头"></a>3.3.2 可变报头</h4><table>
+<thead>
+<tr>
+<th></th>
+<th>field</th>
+<th>value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主题名</td>
+<td>a/b</td>
+</tr>
+<tr>
+<td>报文标识符</td>
+<td>10</td>
+</tr>
+</tbody>
+</table>
+<h5 id="主题名-topic-name"><a href="#主题名-topic-name" class="headerlink" title="主题名 topic name"></a>主题名 topic name</h5><p>用于识别有效载体数据应该被发布到哪一个信息通道</p>
+<p>主题名不可以是通配符，必须是utf编码字符串</p>
+<h5 id="报文标识符"><a href="#报文标识符" class="headerlink" title="报文标识符"></a>报文标识符</h5><p>只有当qos = 1  或者qos =2  才有这个概念</p>
+<h4 id="3-3-3-有效载体"><a href="#3-3-3-有效载体" class="headerlink" title="3.3.3 有效载体"></a>3.3.3 有效载体</h4><p>有效载荷包含将被发布的应用消息</p>
+<h4 id="3-3-4-响应"><a href="#3-3-4-响应" class="headerlink" title="3.3.4 响应"></a>3.3.4 响应</h4><p>publish报文的接收者必须根据publish报文的qos等级发送响应，见下面表格的描述</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>qos</th>
+<th>响应</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> 0</td>
+<td>不响应</td>
+</tr>
+<tr>
+<td> 1</td>
+<td>PUBACK</td>
+</tr>
+<tr>
+<td> 2</td>
+<td>PUBREC</td>
+</tr>
+</tbody>
+</table>
+<h4 id="3-4-PUBACK-发布确认"><a href="#3-4-PUBACK-发布确认" class="headerlink" title="3.4 PUBACK 发布确认"></a>3.4 PUBACK 发布确认</h4><p>puback报文是对qos = 1 等级的publish报文的响应</p>
+<h4 id="3-4-1-固定报头"><a href="#3-4-1-固定报头" class="headerlink" title="3.4.1  固定报头"></a>3.4.1  固定报头</h4><h4 id="3-4-2-可变报头"><a href="#3-4-2-可变报头" class="headerlink" title="3.4.2 可变报头"></a>3.4.2 可变报头</h4><h5 id="报文标识符-1"><a href="#报文标识符-1" class="headerlink" title="报文标识符"></a>报文标识符</h5><h4 id="3-4-3-有效载荷"><a href="#3-4-3-有效载荷" class="headerlink" title="3.4.3 有效载荷"></a>3.4.3 有效载荷</h4><h3 id="3-5-PUBREC-发布收到-qos-2，第一步"><a href="#3-5-PUBREC-发布收到-qos-2，第一步" class="headerlink" title="3.5 PUBREC 发布收到 qos = 2，第一步"></a>3.5 PUBREC 发布收到 qos = 2，第一步</h3><p>pubrec报文是对qos等级2的publish报文的响应</p>
+<h4 id="3-5-1-固定报头"><a href="#3-5-1-固定报头" class="headerlink" title="3.5.1 固定报头"></a>3.5.1 固定报头</h4><h4 id="3-5-2-可变报头"><a href="#3-5-2-可变报头" class="headerlink" title="3.5.2 可变报头"></a>3.5.2 可变报头</h4><h5 id="报文标识符-2"><a href="#报文标识符-2" class="headerlink" title="报文标识符"></a>报文标识符</h5><h4 id="3-5-3-有效载体"><a href="#3-5-3-有效载体" class="headerlink" title="3.5.3 有效载体"></a>3.5.3 有效载体</h4><h3 id="3-6-PUBREL-发布释放-qos-2，第二步"><a href="#3-6-PUBREL-发布释放-qos-2，第二步" class="headerlink" title="3.6 PUBREL 发布释放 qos = 2，第二步"></a>3.6 PUBREL 发布释放 qos = 2，第二步</h3><p>PUBREL报文是对PUBREC报文的响应。它是QoS 2等级协议交换的第三个报文。</p>
+<h4 id="3-6-1-固定报头"><a href="#3-6-1-固定报头" class="headerlink" title="3.6.1 固定报头"></a>3.6.1 固定报头</h4><h4 id="3-6-2-可变报头"><a href="#3-6-2-可变报头" class="headerlink" title="3.6.2 可变报头"></a>3.6.2 可变报头</h4><h5 id="报文标识符-3"><a href="#报文标识符-3" class="headerlink" title="报文标识符"></a>报文标识符</h5><h4 id="3-6-3-有效载荷"><a href="#3-6-3-有效载荷" class="headerlink" title="3.6.3 有效载荷"></a>3.6.3 有效载荷</h4><h3 id="3-7-PUBCOMP-发布完成-qos-2，第三步"><a href="#3-7-PUBCOMP-发布完成-qos-2，第三步" class="headerlink" title="3.7 PUBCOMP 发布完成 qos = 2，第三步"></a>3.7 PUBCOMP 发布完成 qos = 2，第三步</h3><p>PUBCOMP报文是对PUBREL报文的响应。它是QoS 2等级协议交换的第四个也是最后一个报文</p>
+<h4 id="3-7-1-固定报头"><a href="#3-7-1-固定报头" class="headerlink" title="3.7.1 固定报头"></a>3.7.1 固定报头</h4><h4 id="3-7-2-可变报头"><a href="#3-7-2-可变报头" class="headerlink" title="3.7.2 可变报头"></a>3.7.2 可变报头</h4><h5 id="报文标识符-4"><a href="#报文标识符-4" class="headerlink" title="报文标识符"></a>报文标识符</h5><h4 id="3-7-3-有效载荷"><a href="#3-7-3-有效载荷" class="headerlink" title="3.7.3 有效载荷"></a>3.7.3 有效载荷</h4><h3 id="3-8-SUBSCRIBE-订阅主题"><a href="#3-8-SUBSCRIBE-订阅主题" class="headerlink" title="3.8 SUBSCRIBE 订阅主题"></a>3.8 SUBSCRIBE 订阅主题</h3><p>客户端向服务端发送订阅报文用于创建一个或者多个订阅。每个订阅注册客户端关心的一个或者多个主题。萎了 将应用消息转发给那些订阅匹配的主题，服务端发送publish报文给客户端。<br>subscribe报文也指定了最大的qos等级，服务端根据这个发送应用消息给客户端。</p>
+<h4 id="3-8-1-固定报头"><a href="#3-8-1-固定报头" class="headerlink" title="3.8.1 固定报头"></a>3.8.1 固定报头</h4><h4 id="3-8-2-可变报头"><a href="#3-8-2-可变报头" class="headerlink" title="3.8.2 可变报头"></a>3.8.2 可变报头</h4><h4 id="3-8-3-有效载体"><a href="#3-8-3-有效载体" class="headerlink" title="3.8.3 有效载体"></a>3.8.3 有效载体</h4><p>subscribe报文的有效载荷包含了一个主题过滤器列表，表示客户端想要订阅的主题。<br>每个过滤器后面跟着颐和字节，这个字节叫服务质量要求，它给出了服务端向客户端发送应用消息所允许的最大qos等级</p>
+<p>subscribe报文必须包含一对主题过滤器和qos等级字段组合。</p>
+<p>如果qos 不是0、1、2 服务端必须认为subscribe报文是不合法的并且关闭网络连接。</p>
+<h4 id="3-8-4-响应"><a href="#3-8-4-响应" class="headerlink" title="3.8.4 响应"></a>3.8.4 响应</h4><p>服务端收到客户端发送的一个subscribe报文时，必须使用suback报文响应。<br>suback报文必须和等待确认的subscribe报文有相同的报文标识符。</p>
+<p>允许服务端在发送suback报文之前就开始发送与订阅匹配的publish报文！！</p>
+<p>使用qos=2订阅一个主题过滤器等于是说：我想要按照它们发布时的qos等级接收匹配这和过滤器的消息。这意味着，确定消息分发时可能的最大qos等级是发布者的责任，而订阅者可以要求服务端降低qos到更适合它的等级。</p>
+<h3 id="3-9-SUBACK-订阅确认"><a href="#3-9-SUBACK-订阅确认" class="headerlink" title="3.9 SUBACK 订阅确认"></a>3.9 SUBACK 订阅确认</h3><p>服务端发送suback报文给客户端，用于确认它已经收到并且正在处理subscribe报文</p>
+<p>suback报文包含一个返回码清单，他们制定了subscribe请求的每个订阅被授予的最大qos等级</p>
+<h4 id="3-9-1-固定报头"><a href="#3-9-1-固定报头" class="headerlink" title="3.9.1 固定报头"></a>3.9.1 固定报头</h4><h4 id="3-9-2-可变报头"><a href="#3-9-2-可变报头" class="headerlink" title="3.9.2 可变报头"></a>3.9.2 可变报头</h4><h5 id="报文标识符-5"><a href="#报文标识符-5" class="headerlink" title="报文标识符"></a>报文标识符</h5><h4 id="3-9-3-有效载荷"><a href="#3-9-3-有效载荷" class="headerlink" title="3.9.3 有效载荷"></a>3.9.3 有效载荷</h4><p>有效载荷包含一个返回码清单，每个返回码对应等待确认的subscribe报文中的一个主题过滤器。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>返回码</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0x00</td>
+<td>最大qos0</td>
+</tr>
+<tr>
+<td>0x01</td>
+<td>成功  最大qos1</td>
+</tr>
+<tr>
+<td>0x02</td>
+<td>成功 最大qos2</td>
+</tr>
+<tr>
+<td>0x80</td>
+<td>失败</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-10-取消订阅"><a href="#3-10-取消订阅" class="headerlink" title="3.10 取消订阅"></a>3.10 取消订阅</h3><h4 id="3-10-1-固定报头"><a href="#3-10-1-固定报头" class="headerlink" title="3.10.1 固定报头"></a>3.10.1 固定报头</h4><h4 id="3-10-2-可变报头"><a href="#3-10-2-可变报头" class="headerlink" title="3.10.2 可变报头"></a>3.10.2 可变报头</h4><h5 id="报文标识符-6"><a href="#报文标识符-6" class="headerlink" title="报文标识符"></a>报文标识符</h5><h4 id="3-10-3-有效载荷"><a href="#3-10-3-有效载荷" class="headerlink" title="3.10.3 有效载荷"></a>3.10.3 有效载荷</h4><p>unsubscribe 报文的有效载荷包含客户端想要取消订阅的主题过滤器列表</p>
+<p>UNSUBSCRIBE报文的有效载荷必须至少包含一个消息过滤器。没有有效载荷的unsubscribe报文是违反协议的</p>
+<h4 id="3-10-4-响应"><a href="#3-10-4-响应" class="headerlink" title="3.10.4 响应"></a>3.10.4 响应</h4><p>unsubscribe报文提供的主题过滤器，必须和服务端持有的这个客户端的当前主题过滤器集合逐个字符比较</p>
+<p>如果有任何过滤器完全匹配，那么服务端自己的订阅将被删除，否则不会有进一步的处理</p>
+<p>如果服务端删除一个订阅：</p>
+<ul>
+<li>它必须停止分发任何新消息给这个客户端</li>
+<li>它必须分发任何已经开始网客户端发送的qos 1 和qos 2 的消息</li>
+<li>它可以继续发送任何现存的准备分发给客户端的缓存消息</li>
+</ul>
+<p>服务端必须发送unsuback报文响应客户端的unsubscribe请求。且拥有相同的报文标识符</p>
+<h3 id="3-11-UNSUBACK-取消订阅确认"><a href="#3-11-UNSUBACK-取消订阅确认" class="headerlink" title="3.11 UNSUBACK 取消订阅确认"></a>3.11 UNSUBACK 取消订阅确认</h3><p>服务端发送UNSUBACK报文给客户端用于确认收到UNSUBSCRIBE报文</p>
+<h4 id="3-11-1-固定报头"><a href="#3-11-1-固定报头" class="headerlink" title="3.11.1 固定报头"></a>3.11.1 固定报头</h4><h4 id="3-11-2-可变报头"><a href="#3-11-2-可变报头" class="headerlink" title="3.11.2 可变报头"></a>3.11.2 可变报头</h4><h5 id="报文标识符-7"><a href="#报文标识符-7" class="headerlink" title="报文标识符"></a>报文标识符</h5><h4 id="3-11-3-有效载荷"><a href="#3-11-3-有效载荷" class="headerlink" title="3.11.3 有效载荷"></a>3.11.3 有效载荷</h4><h3 id="3-12-PINGREQ-心跳请求"><a href="#3-12-PINGREQ-心跳请求" class="headerlink" title="3.12 PINGREQ 心跳请求"></a>3.12 PINGREQ 心跳请求</h3><p>作用：告诉服务端，自己还没断气</p>
+<p>保持连接 Keep Alive处理中用到这个报文</p>
+<h3 id="3-13-PINGRESP"><a href="#3-13-PINGRESP" class="headerlink" title="3.13 PINGRESP"></a>3.13 PINGRESP</h3><p> 作用：响应客户端的pingreq报文，表示服务端还活着</p>
+<p> 保持连接 Keep Alive处理中用到这个报文</p>
+<h3 id="3-14-DISCONNECT-断开连接"><a href="#3-14-DISCONNECT-断开连接" class="headerlink" title="3.14 DISCONNECT 断开连接"></a>3.14 DISCONNECT 断开连接</h3><h4 id="3-14-1-固定报头"><a href="#3-14-1-固定报头" class="headerlink" title="3.14.1 固定报头"></a>3.14.1 固定报头</h4><h4 id="3-14-2-可变报头"><a href="#3-14-2-可变报头" class="headerlink" title="3.14.2 可变报头"></a>3.14.2 可变报头</h4><h4 id="3-14-3-有效载荷"><a href="#3-14-3-有效载荷" class="headerlink" title="3.14.3 有效载荷"></a>3.14.3 有效载荷</h4><h4 id="3-14-4-响应"><a href="#3-14-4-响应" class="headerlink" title="3.14.4 响应"></a>3.14.4 响应</h4><p>必须丢弃任何与当前连接关联的未发布的遗嘱消息</p>
+<h2 id="4-操作行为"><a href="#4-操作行为" class="headerlink" title="4 操作行为"></a>4 操作行为</h2><h3 id="4-1-状态存储"><a href="#4-1-状态存储" class="headerlink" title="4.1 状态存储"></a>4.1 状态存储</h3><p>为了提供服务质量保证。客户端和服务端有必要存储会话状态。</p>
+<p>在整个会话期间，客户端和服务端都必须存储会话状态。会话必须至少持续和它的活跃网络连接同样长的时间</p>
+<p>服务端的保留消息不是会话状态的组成部分，服务端应该保存暗中消息知道客户端删除它！！！！</p>
+<h3 id="4-2-网络连接"><a href="#4-2-网络连接" class="headerlink" title="4.2 网络连接"></a>4.2 网络连接</h3><p>mqtt3.1 使用的传输层协议是tcp/ip协议，下面的协议也是支持的：tls，websocket</p>
+<h3 id="4-7-主题名和主题过滤器"><a href="#4-7-主题名和主题过滤器" class="headerlink" title="4.7 主题名和主题过滤器"></a>4.7 主题名和主题过滤器</h3><h4 id="4-7-1-主题通配符"><a href="#4-7-1-主题通配符" class="headerlink" title="4.7.1 主题通配符"></a>4.7.1 主题通配符</h4><p>主题层级</p>
+  
+	</div>
+		<footer class="article-footer clearfix">
+
+
+<div class="article-categories">
+  <span></span>
+  <a class="article-category-link" href="/分类/MQTT相关资料/">MQTT相关资料</a>
+</div>
+
+
+
+<div class="article-share" id="share">
+
+  <div data-url="http://yoursite.com/2017/11/07/10_mqtt/00_mqtt协议笔记 - 副本/" data-title="mqtt协议解读1 | zhaod博客" data-tsina="" class="share clearfix">
+  </div>
+
+</div>
+</footer>   	       
+	</article>
+	
+<nav class="article-nav clearfix">
+ 
+ <div class="prev" >
+ <a href="/2017/11/07/10_mqtt/00_mqtt协议笔记 - 副本 (4)/" title="mqtt协议解读5">
+  <strong>PREVIOUS:</strong><br/>
+  <span>
+  mqtt协议解读5</span>
+</a>
+</div>
+
+
+<div class="next">
+<a href="/2017/11/07/10_mqtt/00_mqtt协议笔记 - 副本 (5)/"  title="mqtt协议解读测试代码高亮">
+ <strong>NEXT:</strong><br/> 
+ <span>mqtt协议解读测试代码高亮
+</span>
+</a>
+</div>
+
+</nav>
+
+	
+</div>  
+      <div class="openaside"><a class="navbutton" href="#" title="显示侧边栏"></a></div>
+
+  <div id="toc" class="toc-aside">
+  <strong class="toc-title">文章目录</strong>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-MQTT介绍"><span class="toc-number">1.</span> <span class="toc-text">1 MQTT介绍</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-MQTT控制报文的格式"><span class="toc-number">2.</span> <span class="toc-text">2 MQTT控制报文的格式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-固定报头-fixed-header"><span class="toc-number">2.1.</span> <span class="toc-text">2.1 固定报头 fixed header</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-1-类型"><span class="toc-number">2.1.1.</span> <span class="toc-text">2.1.1 类型</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1-2-标志"><span class="toc-number">2.1.2.</span> <span class="toc-text">2.1.2 标志</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-可变报头"><span class="toc-number">2.2.</span> <span class="toc-text">2.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2-1-报文标识符-packet-idenfifier"><span class="toc-number">2.2.1.</span> <span class="toc-text">2.2.1 报文标识符 packet idenfifier</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-有效载荷-payload"><span class="toc-number">2.3.</span> <span class="toc-text">2.3 有效载荷 payload</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-MQTT控制报文"><span class="toc-number">3.</span> <span class="toc-text">3 MQTT控制报文</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-CONNECT-连接服务端"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 CONNECT 连接服务端</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-1-固定报头"><span class="toc-number">3.1.1.</span> <span class="toc-text">3.1.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-2-可变报头"><span class="toc-number">3.1.2.</span> <span class="toc-text">3.1.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#清理会话-Clean-Session"><span class="toc-number">3.1.2.1.</span> <span class="toc-text">清理会话 Clean Session</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#遗嘱标志-Will-Flag"><span class="toc-number">3.1.2.2.</span> <span class="toc-text">遗嘱标志 Will Flag</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#遗嘱服务质量等级-Will-Qos"><span class="toc-number">3.1.2.3.</span> <span class="toc-text">遗嘱服务质量等级 Will Qos</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#遗嘱保留-Will-Reatain"><span class="toc-number">3.1.2.4.</span> <span class="toc-text">遗嘱保留 Will Reatain</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#用户名，密码"><span class="toc-number">3.1.2.5.</span> <span class="toc-text">用户名，密码</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-3-有效载荷Payload"><span class="toc-number">3.1.3.</span> <span class="toc-text">3.1.3 有效载荷Payload</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#客户端标识符-Client-ID"><span class="toc-number">3.1.3.1.</span> <span class="toc-text">客户端标识符 Client ID</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#遗嘱主题-Will-Topic"><span class="toc-number">3.1.3.2.</span> <span class="toc-text">遗嘱主题 Will Topic</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#遗嘱消息-Will-Message"><span class="toc-number">3.1.3.3.</span> <span class="toc-text">遗嘱消息 Will Message</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#用户名-UserName"><span class="toc-number">3.1.3.4.</span> <span class="toc-text">用户名 UserName</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#密码-Password"><span class="toc-number">3.1.3.5.</span> <span class="toc-text">密码 Password</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1-4-连接过程"><span class="toc-number">3.1.4.</span> <span class="toc-text">3.1.4 连接过程</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-CONNACK-确认连接请求"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 CONNACK 确认连接请求</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-1-固定报头"><span class="toc-number">3.2.1.</span> <span class="toc-text">3.2.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-2-可变报头"><span class="toc-number">3.2.2.</span> <span class="toc-text">3.2.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#当前会话-Session-Present"><span class="toc-number">3.2.2.1.</span> <span class="toc-text">当前会话 Session Present</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-3-有效载体"><span class="toc-number">3.2.3.</span> <span class="toc-text">3.2.3 有效载体</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2-4-错误码（MQTT协议3-1-1）"><span class="toc-number">3.2.4.</span> <span class="toc-text">3.2.4 错误码（MQTT协议3.1.1）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-发布消息-PUBLISH"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 发布消息 PUBLISH</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-1-固定报头"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1 固定报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#重发标志DUP"><span class="toc-number">3.3.1.1.</span> <span class="toc-text">重发标志DUP</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#服务质量等级qos"><span class="toc-number">3.3.1.2.</span> <span class="toc-text">服务质量等级qos</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#保留标志-retain"><span class="toc-number">3.3.1.3.</span> <span class="toc-text">保留标志 retain</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-2-可变报头"><span class="toc-number">3.3.2.</span> <span class="toc-text">3.3.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#主题名-topic-name"><span class="toc-number">3.3.2.1.</span> <span class="toc-text">主题名 topic name</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符"><span class="toc-number">3.3.2.2.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-3-有效载体"><span class="toc-number">3.3.3.</span> <span class="toc-text">3.3.3 有效载体</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-4-响应"><span class="toc-number">3.3.4.</span> <span class="toc-text">3.3.4 响应</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4-PUBACK-发布确认"><span class="toc-number">3.3.5.</span> <span class="toc-text">3.4 PUBACK 发布确认</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4-1-固定报头"><span class="toc-number">3.3.6.</span> <span class="toc-text">3.4.1  固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4-2-可变报头"><span class="toc-number">3.3.7.</span> <span class="toc-text">3.4.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-1"><span class="toc-number">3.3.7.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4-3-有效载荷"><span class="toc-number">3.3.8.</span> <span class="toc-text">3.4.3 有效载荷</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-PUBREC-发布收到-qos-2，第一步"><span class="toc-number">3.4.</span> <span class="toc-text">3.5 PUBREC 发布收到 qos = 2，第一步</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-5-1-固定报头"><span class="toc-number">3.4.1.</span> <span class="toc-text">3.5.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-5-2-可变报头"><span class="toc-number">3.4.2.</span> <span class="toc-text">3.5.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-2"><span class="toc-number">3.4.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-5-3-有效载体"><span class="toc-number">3.4.3.</span> <span class="toc-text">3.5.3 有效载体</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-6-PUBREL-发布释放-qos-2，第二步"><span class="toc-number">3.5.</span> <span class="toc-text">3.6 PUBREL 发布释放 qos = 2，第二步</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-6-1-固定报头"><span class="toc-number">3.5.1.</span> <span class="toc-text">3.6.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-6-2-可变报头"><span class="toc-number">3.5.2.</span> <span class="toc-text">3.6.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-3"><span class="toc-number">3.5.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-6-3-有效载荷"><span class="toc-number">3.5.3.</span> <span class="toc-text">3.6.3 有效载荷</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-7-PUBCOMP-发布完成-qos-2，第三步"><span class="toc-number">3.6.</span> <span class="toc-text">3.7 PUBCOMP 发布完成 qos = 2，第三步</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-7-1-固定报头"><span class="toc-number">3.6.1.</span> <span class="toc-text">3.7.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-7-2-可变报头"><span class="toc-number">3.6.2.</span> <span class="toc-text">3.7.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-4"><span class="toc-number">3.6.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-7-3-有效载荷"><span class="toc-number">3.6.3.</span> <span class="toc-text">3.7.3 有效载荷</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-8-SUBSCRIBE-订阅主题"><span class="toc-number">3.7.</span> <span class="toc-text">3.8 SUBSCRIBE 订阅主题</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-8-1-固定报头"><span class="toc-number">3.7.1.</span> <span class="toc-text">3.8.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-8-2-可变报头"><span class="toc-number">3.7.2.</span> <span class="toc-text">3.8.2 可变报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-8-3-有效载体"><span class="toc-number">3.7.3.</span> <span class="toc-text">3.8.3 有效载体</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-8-4-响应"><span class="toc-number">3.7.4.</span> <span class="toc-text">3.8.4 响应</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-9-SUBACK-订阅确认"><span class="toc-number">3.8.</span> <span class="toc-text">3.9 SUBACK 订阅确认</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-9-1-固定报头"><span class="toc-number">3.8.1.</span> <span class="toc-text">3.9.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-9-2-可变报头"><span class="toc-number">3.8.2.</span> <span class="toc-text">3.9.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-5"><span class="toc-number">3.8.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-9-3-有效载荷"><span class="toc-number">3.8.3.</span> <span class="toc-text">3.9.3 有效载荷</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-10-取消订阅"><span class="toc-number">3.9.</span> <span class="toc-text">3.10 取消订阅</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-10-1-固定报头"><span class="toc-number">3.9.1.</span> <span class="toc-text">3.10.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-10-2-可变报头"><span class="toc-number">3.9.2.</span> <span class="toc-text">3.10.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-6"><span class="toc-number">3.9.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-10-3-有效载荷"><span class="toc-number">3.9.3.</span> <span class="toc-text">3.10.3 有效载荷</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-10-4-响应"><span class="toc-number">3.9.4.</span> <span class="toc-text">3.10.4 响应</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-11-UNSUBACK-取消订阅确认"><span class="toc-number">3.10.</span> <span class="toc-text">3.11 UNSUBACK 取消订阅确认</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-11-1-固定报头"><span class="toc-number">3.10.1.</span> <span class="toc-text">3.11.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-11-2-可变报头"><span class="toc-number">3.10.2.</span> <span class="toc-text">3.11.2 可变报头</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#报文标识符-7"><span class="toc-number">3.10.2.1.</span> <span class="toc-text">报文标识符</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-11-3-有效载荷"><span class="toc-number">3.10.3.</span> <span class="toc-text">3.11.3 有效载荷</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-12-PINGREQ-心跳请求"><span class="toc-number">3.11.</span> <span class="toc-text">3.12 PINGREQ 心跳请求</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-13-PINGRESP"><span class="toc-number">3.12.</span> <span class="toc-text">3.13 PINGRESP</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-14-DISCONNECT-断开连接"><span class="toc-number">3.13.</span> <span class="toc-text">3.14 DISCONNECT 断开连接</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-14-1-固定报头"><span class="toc-number">3.13.1.</span> <span class="toc-text">3.14.1 固定报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-14-2-可变报头"><span class="toc-number">3.13.2.</span> <span class="toc-text">3.14.2 可变报头</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-14-3-有效载荷"><span class="toc-number">3.13.3.</span> <span class="toc-text">3.14.3 有效载荷</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-14-4-响应"><span class="toc-number">3.13.4.</span> <span class="toc-text">3.14.4 响应</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-操作行为"><span class="toc-number">4.</span> <span class="toc-text">4 操作行为</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-状态存储"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 状态存储</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-网络连接"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 网络连接</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-7-主题名和主题过滤器"><span class="toc-number">4.3.</span> <span class="toc-text">4.7 主题名和主题过滤器</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-7-1-主题通配符"><span class="toc-number">4.3.1.</span> <span class="toc-text">4.7.1 主题通配符</span></a></li></ol></li></ol></li></ol>
+  </div>
+
+<div id="asidepart">
+<div class="closeaside"><a class="closebutton" href="#" title="隐藏侧边栏"></a></div>
+<aside class="clearfix">
+
+  
+<div class="categorieslist">
+	<p class="asidetitle">分类</p>
+		<ul>
+		
+			<li><a href="/分类/JAVA/" title="JAVA">JAVA<sup>1</sup></a></li>
+		
+			<li><a href="/分类/MQTT相关资料/" title="MQTT相关资料">MQTT相关资料<sup>9</sup></a></li>
+		
+		</ul>
+</div>
+
+
+  
+
+  <div class="rsspart">
+	<a href="" target="_blank" title="rss">RSS 订阅</a>
+</div>
+
+</aside>
+</div>
+    </div>
+    <footer><div id="footer" >
+	
+	<div class="line">
+		<span></span>
+		<div class="author"></div>
+	</div>
+	
+	
+	<div class="social-font clearfix">
+		
+		
+		
+		
+		
+	</div>
+		<p class="copyright">Powered by <a href="http://hexo.io" target="_blank" title="hexo">hexo</a> and Theme by <a href="https://github.com/A-limon/pacman" target="_blank" title="Pacman">Pacman</a> © 2018 
+		
+		<a href="http://yoursite.com" target="_blank" title="赵迪">赵迪</a>
+		
+		</p>
+</div>
+</footer>
+    <script src="/js/jquery-2.1.0.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function(){ 
+  $('.navbar').click(function(){
+    $('header nav').toggleClass('shownav');
+  });
+  var myWidth = 0;
+  function getSize(){
+    if( typeof( window.innerWidth ) == 'number' ) {
+      myWidth = window.innerWidth;
+    } else if( document.documentElement && document.documentElement.clientWidth) {
+      myWidth = document.documentElement.clientWidth;
+    };
+  };
+  var m = $('#main'),
+      a = $('#asidepart'),
+      c = $('.closeaside'),
+      o = $('.openaside');
+  $(window).resize(function(){
+    getSize(); 
+    if (myWidth >= 1024) {
+      $('header nav').removeClass('shownav');
+    }else
+    {
+      m.removeClass('moveMain');
+      a.css('display', 'block').removeClass('fadeOut');
+      o.css('display', 'none');
+      
+      $('#toc.toc-aside').css('display', 'none');
+        
+    }
+  });
+  c.click(function(){
+    a.addClass('fadeOut').css('display', 'none');
+    o.css('display', 'block').addClass('fadeIn');
+    m.addClass('moveMain');
+  });
+  o.click(function(){
+    o.css('display', 'none').removeClass('beforeFadeIn');
+    a.css('display', 'block').removeClass('fadeOut').addClass('fadeIn');      
+    m.removeClass('moveMain');
+  });
+  $(window).scroll(function(){
+    o.css("top",Math.max(80,260-$(this).scrollTop()));
+  });
+});
+</script>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var ai = $('.article-content>iframe'),
+      ae = $('.article-content>embed'),
+      t  = $('#toc'),
+      h  = $('article h2')
+      ah = $('article h2'),
+      ta = $('#toc.toc-aside'),
+      o  = $('.openaside'),
+      c  = $('.closeaside');
+  if(ai.length>0){
+    ai.wrap('<div class="video-container" />');
+  };
+  if(ae.length>0){
+   ae.wrap('<div class="video-container" />');
+  };
+  if(ah.length==0){
+    t.css('display','none');
+  }else{
+    c.click(function(){
+      ta.css('display', 'block').addClass('fadeIn');
+    });
+    o.click(function(){
+      ta.css('display', 'none');
+    });
+    $(window).scroll(function(){
+      ta.css("top",Math.max(140,320-$(this).scrollTop()));
+    });
+  };
+});
+</script>
+
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+  var $this = $('.share'),
+      url = $this.attr('data-url'),
+      encodedUrl = encodeURIComponent(url),
+      title = $this.attr('data-title'),
+      tsina = $this.attr('data-tsina');
+  var html = [
+  '<a href="#" class="overlay" id="qrcode"></a>',
+  '<div class="qrcode clearfix"><span>扫描二维码分享到微信朋友圈</span><a class="qrclose" href="#share"></a><strong>Loading...Please wait</strong><img id="qrcode-pic" data-src="http://s.jiathis.com/qrcode.php?url=' + encodedUrl + '"/></div>',
+  '<a href="#textlogo" class="article-back-to-top" title="Top"></a>',
+  '<a href="https://www.facebook.com/sharer.php?u=' + encodedUrl + '" class="article-share-facebook" target="_blank" title="Facebook"></a>',
+  '<a href="#qrcode" class="article-share-qrcode" title="QRcode"></a>',
+  '<a href="https://twitter.com/intent/tweet?url=' + encodedUrl + '" class="article-share-twitter" target="_blank" title="Twitter"></a>',
+  '<a href="http://service.weibo.com/share/share.php?title='+title+'&url='+encodedUrl +'&ralateUid='+ tsina +'&searchPic=true&style=number' +'" class="article-share-weibo" target="_blank" title="Weibo"></a>',
+  '<span title="Share to"></span>'
+  ].join('');
+  $this.append(html);
+  $('.article-share-qrcode').click(function(){
+    var imgSrc = $('#qrcode-pic').attr('data-src');
+    $('#qrcode-pic').attr('src', imgSrc);
+    $('#qrcode-pic').load(function(){
+        $('.qrcode strong').text(' ');
+    });
+  });
+});     
+</script>
+
+
+
+
+
+
+  </body>
+</html>
