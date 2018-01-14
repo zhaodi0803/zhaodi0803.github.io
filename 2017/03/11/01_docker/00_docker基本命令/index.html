@@ -4,12 +4,26 @@
 <head>
   <meta charset="UTF-8">
   
-    <title>javase测试的标题 | zhaod博客</title>
+    <title>docker基本命令 | zhaod博客</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, minimum-scale=1">
     
     <meta name="author" content="赵迪">
     
-    <meta name="description" content="java 的起源java的衰败">
+    <meta name="description" content="[TOC]
+1 docker操作
+查看容器状态(cpu,内存等)
+
+docker stats
+
+查看所有容器
+
+docker ps       查看运行的容器（运行的）
+docker ps -a    查看所有容器（未运行）
+docker ps -aq   展示所有容器ID
+
+删除容器
+
+docke">
     
     
     
@@ -65,15 +79,15 @@
 		<header class="article-info clearfix">
   <h1 itemprop="name">
     
-      <a href="/2018/01/11/00JavaSE/00测试/" title="javase测试的标题" itemprop="url">javase测试的标题</a>
+      <a href="/2017/03/11/01_docker/00_docker基本命令/" title="docker基本命令" itemprop="url">docker基本命令</a>
   </h1>
   <p class="article-author">By
     
       <a href="http://yoursite.com" title="赵迪">赵迪</a>
     </p>
   <p class="article-time">
-    <time datetime="2018-01-11T07:45:23.000Z" itemprop="datePublished">2018-01-11</time>
-    更新日期:<time datetime="2018-01-11T07:49:33.113Z" itemprop="dateModified">2018-01-11</time>
+    <time datetime="2017-03-11T07:45:23.000Z" itemprop="datePublished">2017-03-11</time>
+    更新日期:<time datetime="2018-01-14T14:33:55.460Z" itemprop="dateModified">2018-01-14</time>
     
   </p>
 </header>
@@ -82,10 +96,73 @@
 		
 		<div id="toc" class="toc-article">
 			<strong class="toc-title">文章目录</strong>
-		<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#java-的起源"><span class="toc-number">1.</span> <span class="toc-text">java 的起源</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#java的衰败"><span class="toc-number">2.</span> <span class="toc-text">java的衰败</span></a></li></ol>
+		<ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-docker操作"><span class="toc-number">1.</span> <span class="toc-text">1 docker操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-dockerfile"><span class="toc-number">2.</span> <span class="toc-text">2 dockerfile</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-docker-compose-yml"><span class="toc-number">3.</span> <span class="toc-text">3 docker-compose.yml</span></a></li></ol>
 		</div>
 		
-		<h2 id="java-的起源"><a href="#java-的起源" class="headerlink" title="java 的起源"></a>java 的起源</h2><h2 id="java的衰败"><a href="#java的衰败" class="headerlink" title="java的衰败"></a>java的衰败</h2>  
+		<p>[TOC]</p>
+<h2 id="1-docker操作"><a href="#1-docker操作" class="headerlink" title="1 docker操作"></a>1 docker操作</h2><ul>
+<li>查看容器状态(cpu,内存等)</li>
+</ul>
+<pre><code>docker stats
+</code></pre><ul>
+<li>查看所有容器</li>
+</ul>
+<pre><code>docker ps       查看运行的容器（运行的）
+docker ps -a    查看所有容器（未运行）
+docker ps -aq   展示所有容器ID
+</code></pre><ul>
+<li>删除容器</li>
+</ul>
+<pre><code>docker rm 容器ID
+docker rm $(docker ps -aq) 删除所有没有运行的容器
+</code></pre><ul>
+<li>删除镜像</li>
+</ul>
+<pre><code>docker rmi 镜像ID
+</code></pre><ul>
+<li>开启未运行的容器</li>
+</ul>
+<pre><code>docker start 容器ID
+</code></pre><ul>
+<li>打镜像</li>
+</ul>
+<pre><code>docker build -t &apos;name&apos; .
+
+-t 镜像名称
+. 当前文件夹中所有内容都打为镜像
+</code></pre><ul>
+<li><p>运行容器</p>
+<pre><code>docker run -d -p 9000:9000 mqtt-client-ms-1.0
+
+-d 后台运行
+-p 端口映射
+最后的为镜像名称
+</code></pre><h2 id="2-dockerfile"><a href="#2-dockerfile" class="headerlink" title="2 dockerfile"></a>2 dockerfile</h2></li>
+</ul>
+<pre><code>from java:8
+ maintainer zhaod
+ add mqtt_6.0.jar app.jar
+ expose 8090
+ expose 1884
+ expose 8883
+ entrypoint [&quot;java&quot;,&quot;-jar&quot;,&quot;/app.jar&quot;]
+</code></pre><h2 id="3-docker-compose-yml"><a href="#3-docker-compose-yml" class="headerlink" title="3 docker-compose.yml"></a>3 docker-compose.yml</h2><pre><code>version: &quot;2&quot;
+services:
+  tunneluser9.0:
+    image: node:6.11.3
+    working_dir: &quot;/mqtt-web&quot;
+    environment:
+      - HOST=0.0.0.0
+    ports:
+      - &quot;8002:8002&quot;
+    volumes:
+      - ./mqtt-web:/mqtt-web
+    command: bash -c &quot;npm run start&quot;
+</code></pre><ul>
+<li>运行compose</li>
+</ul>
+<pre><code>docker-compose up -d
+</code></pre>  
 	</div>
 		<footer class="article-footer clearfix">
 
@@ -99,7 +176,7 @@
 
 <div class="article-share" id="share">
 
-  <div data-url="http://yoursite.com/2018/01/11/00JavaSE/00测试/" data-title="javase测试的标题 | zhaod博客" data-tsina="" class="share clearfix">
+  <div data-url="http://yoursite.com/2017/03/11/01_docker/00_docker基本命令/" data-title="docker基本命令 | zhaod博客" data-tsina="" class="share clearfix">
   </div>
 
 </div>
@@ -108,14 +185,14 @@
 	
 <nav class="article-nav clearfix">
  
-
-<div class="next">
-<a href="/2017/11/07/10_mqtt/00_mqtt协议笔记 - 副本/"  title="mqtt协议解读1">
- <strong>NEXT:</strong><br/> 
- <span>mqtt协议解读1
-</span>
+ <div class="prev" >
+ <a href="/2017/11/06/10_mqtt/02_mqtt配置页面操作说明/" title="mqtt配置页使用文档">
+  <strong>PREVIOUS:</strong><br/>
+  <span>
+  mqtt配置页使用文档</span>
 </a>
 </div>
+
 
 </nav>
 
@@ -125,7 +202,7 @@
 
   <div id="toc" class="toc-aside">
   <strong class="toc-title">文章目录</strong>
-  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#java-的起源"><span class="toc-number">1.</span> <span class="toc-text">java 的起源</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#java的衰败"><span class="toc-number">2.</span> <span class="toc-text">java的衰败</span></a></li></ol>
+  <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-docker操作"><span class="toc-number">1.</span> <span class="toc-text">1 docker操作</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-dockerfile"><span class="toc-number">2.</span> <span class="toc-text">2 dockerfile</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-docker-compose-yml"><span class="toc-number">3.</span> <span class="toc-text">3 docker-compose.yml</span></a></li></ol>
   </div>
 
 <div id="asidepart">
